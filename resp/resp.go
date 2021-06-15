@@ -19,3 +19,10 @@ func ListData(data interface{}, total int64, ctx *gin.Context) {
 		"data":  data,
 	})
 }
+
+func OneData(data interface{}, ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{
+		"code": ok,
+		"data": data,
+	})
+}
