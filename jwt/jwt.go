@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -11,13 +12,14 @@ import (
 
 type JWTConfig struct {
 	ClaimsKey string
-	Expires   int64
+	ExpiresAt int64
 	Secret    string
 }
 
 type SessionJWTClaims struct {
 	UserId             string `json:"user_id"`
-	OpenId             string `json:"open_id"`
+	OpenId             string `json:"openid"`
+	ExpiresAt          int64  `json:"expires_at"`
 	jwt.StandardClaims `json:"claims"`
 }
 
@@ -30,14 +32,13 @@ func GenerateJWT(key string, claims SessionJWTClaims) (string, error) {
 	return ss, nil
 }
 
-// JWT TODO expire out
 func JWT(config JWTConfig) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		jwtToken := ctx.Request.Header.Get("token")
 		if len(jwtToken) == 0 {
-			ctx.JSON(http.StatusBadRequest, gin.H{
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"code": 205,
-				"msg":  "not jwtToken",
+				"msg":  "Not Token",
 			})
 			return
 		}
@@ -46,14 +47,24 @@ func JWT(config JWTConfig) gin.HandlerFunc {
 		_, err := jwt.ParseWithClaims(tokenString, sessionsClaims, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); ok {
 				return []byte(config.Secret), nil
-			} else {
-				return nil, fmt.Errorf("parse JTW error")
 			}
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"code": 207,
+				"msg":  "parse JTW error",
+			})
+			return nil, nil
 		})
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"code": 206,
 				"msg":  fmt.Sprintf("Parse Claims Error:%s", err),
+			})
+			return
+		}
+		if sessionsClaims.ExpiresAt > time.Now().Unix() {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"code": 208,
+				"msg":  fmt.Sprintf("Token already expired"),
 			})
 			return
 		}
