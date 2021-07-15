@@ -32,6 +32,16 @@ func GenerateJWT(key string, claims SessionJWTClaims) (string, error) {
 	return ss, nil
 }
 
+func Claims(ctx *gin.Context) (*SessionJWTClaims, error) {
+	var claims *SessionJWTClaims
+	if val, ok := ctx.Get("user"); ok {
+		claims = val.(*SessionJWTClaims)
+	} else {
+		return nil, fmt.Errorf("claims not find")
+	}
+	return claims, nil
+}
+
 func JWT(config JWTConfig) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		jwtToken := ctx.Request.Header.Get("token")
