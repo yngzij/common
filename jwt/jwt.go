@@ -17,8 +17,8 @@ type JWTConfig struct {
 }
 
 type SessionJWTClaims struct {
-	UserId             string `json:"user_id"`
-	OpenId             string `json:"open_id"`
+	UserID             string `json:"user_id"`
+	OpenID             string `json:"open_id"`
 	ExpiresAt          int64  `json:"expires_at"`
 	jwt.StandardClaims `json:"claims"`
 }
